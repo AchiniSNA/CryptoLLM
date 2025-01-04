@@ -45,7 +45,7 @@ class CRYPTOLLM(BaseWindows):
                  loss = MAE(),
                  valid_loss = None,
                  learning_rate: float = 1e-4,
-                 max_steps: int = 100,
+                 max_steps: int = 5,
                  val_check_steps: int = 100,
                  batch_size: int = 32,
                  valid_batch_size: Optional[int] = None,

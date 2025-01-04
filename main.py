@@ -2,73 +2,134 @@ import time
 import datetime as dt
 import yfinance as yf
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import streamlit as st
 from neuralforecast import NeuralForecast
-from neuralforecast.utils import augment_calendar_df
 from modules.cryptollm import CRYPTOLLM
 
-# Fetch historical daily Bitcoin price data
-data = yf.download('BTC-USD', start='2024-01-01', end='2024-10-26', interval='1d')
+# Streamlit Interface
+st.set_page_config(page_title="Cryptocurrency Price Forecasting", layout="wide")
 
-# Reset index to have a proper 'ds' column for date
-data = data.reset_index()
+# Title and Description
+st.title("Cryptocurrency Price Forecasting with LLMs")
+st.markdown("""
+This app uses a Large Language Model (TimeLLM2) to forecast daily cryptocurrency prices based on historical data.
+""")
 
-# Select only the date and closing price
-data = data[['Date', 'Close']]
-data.columns = ['ds', 'y']  # Renaming columns to match the format
+# Sidebar Inputs
+st.sidebar.header("Configuration")
 
-# Ensure that the 'ds' column is in the correct datetime format
-data['ds'] = pd.to_datetime(data['ds'])
-# Add a unique_id column for the dataset
-data['unique_id'] = 'bitcoin'  # Set a unique identifier for the entire dataset
+# Cryptocurrency Selection
+crypto_list = {
+    'Bitcoin (BTC)': 'BTC-USD',
+    'Ethereum (ETH)': 'ETH-USD',
+    'Binance Coin (BNB)': 'BNB-USD',
+    'Cardano (ADA)': 'ADA-USD',
+    'Solana (SOL)': 'SOL-USD'
+}
 
-# Prepare the data for training and testing
-train_size = int(len(data) * 0.8)  # 80% for training
-Y_train_df = data[:train_size]
-Y_test_df = data[train_size:].reset_index(drop=True)
+crypto_name = st.sidebar.selectbox("Select Cryptocurrency", list(crypto_list.keys()))
+crypto_symbol = crypto_list[crypto_name]
 
-# Calculate suitable input size
-#max_input_size = len(Y_train_df) - 30  # 30 is the forecasting horizon; adjust if needed
-#input_size = max(1, min(max_input_size, 60))  # Use min to ensure it's not more than available data
-prompt_prefix = "The dataset contains data on daily Bitcoin prices. There is potential for yearly trends and seasonal patterns."
-# Initialize the TimeLLM2 model
-timellm = CRYPTOLLM(
-    h=30,  # Forecasting horizon (adjust as needed)
-    input_size=50,  # Adjust this input size as discussed earlier  #36
-    #llm= "Qwen/Qwen2.5-0.5B-Instruct",
-    #d_llm=896,
-    #llm=llm,
-    #llm_config=llm_config,
-    #llm_tokenizer=llm_tokenizer,
-    prompt_prefix=prompt_prefix,
-    batch_size=24,
-    windows_batch_size=24
-)
-# Initialize NeuralForecast
-nf = NeuralForecast(
-    models=[timellm],
-    freq='D'  # Daily frequency
-)
+# Input fields for data selection
+start_date = st.sidebar.date_input("Start Date", dt.date(2024, 1, 1))
+end_date = st.sidebar.date_input("End Date", dt.date(2024, 10, 26))
+forecast_horizon = st.sidebar.slider("Forecast Horizon (days)", 7, 60, 30)
+input_size = st.sidebar.slider("Input Size (days)", 30, 120, 50)
 
-# Fit the model on training data
-nf.fit(df=Y_train_df, val_size=30)  # Validate on last 12 data points
+# Forecast Button
+if st.sidebar.button("Start Forecasting"):
+    with st.spinner("Fetching data and training the model..."):
+        # Load Data
+        st.subheader(f"Historical Data for {crypto_name}")
+        data = yf.download(crypto_symbol, start=start_date, end=end_date, interval='1d')
+        
+        if data.empty:
+            st.error("No data available for the selected date range. Please adjust the start and end dates.")
+        else:
+            # Preprocess data
+            data = data.reset_index()
+            data = data[['Date', 'Close']]
+            data.columns = ['ds', 'y']
+            data['ds'] = pd.to_datetime(data['ds'])
+            data['unique_id'] = crypto_symbol
+            
+            # Display data
+            st.write(data.head())
+            
+            # Split Data
+            train_size = int(len(data) * 0.8)
+            Y_train_df = data[:train_size]
+            Y_test_df = data[train_size:].reset_index(drop=True)
+            
+            # Initialize TimeLLM2 model
+            prompt_prefix = f"The dataset contains daily prices for {crypto_name}. Seasonal and yearly trends may be present."
+            timellm = CRYPTOLLM(
+                h=forecast_horizon,
+                input_size=input_size,
+                prompt_prefix=prompt_prefix,
+                batch_size=24,
+                windows_batch_size=24
+            )
+            
+            # Initialize NeuralForecast
+            nf = NeuralForecast(
+                models=[timellm],
+                freq='D'
+            )
+            
+            # Train Model
+            nf.fit(df=Y_train_df, val_size=forecast_horizon)
+            
+            # Generate Forecasts
+            forecasts = nf.predict(futr_df=Y_test_df)
+            
+            st.success("Forecasting completed!")
+            
+            # Plot Results
+            st.subheader(f"Forecast Results for {crypto_name}")
+            fig = go.Figure()
 
-# Generate forecasts for the test dataset
-forecasts = nf.predict(futr_df=Y_test_df)
+            # Add training data
+            fig.add_trace(go.Scatter(
+                x=Y_train_df['ds'],
+                y=Y_train_df['y'],
+                mode='lines',
+                name='Training Data',
+                line=dict(color='blue')
+            ))
 
-# Visualize the results
-plt.figure(figsize=(14, 7))
-plt.plot(Y_train_df['ds'], Y_train_df['y'], label='Training Data', color='blue')
-plt.plot(Y_test_df['ds'], Y_test_df['y'], label='Actual Prices', color='green')
-plt.plot(forecasts['ds'], forecasts['TimeLLM2'], label='Forecasted Prices', color='orange', linestyle='--')
-plt.title('Bitcoin Price Forecasting')
-plt.xlabel('Date')
-plt.ylabel('Price (USD)')
-plt.legend()
-plt.xticks(rotation=45)
-plt.grid()
-plt.tight_layout()
-plt.show()
+            # Add actual prices
+            fig.add_trace(go.Scatter(
+                x=Y_test_df['ds'],
+                y=Y_test_df['y'],
+                mode='lines',
+                name='Actual Prices',
+                line=dict(color='green')
+            ))
 
-# Print the forecasts DataFrame for inspection
-print(forecasts)
+            # Add forecasted prices
+            fig.add_trace(go.Scatter(
+                x=forecasts['ds'],
+                y=forecasts['TimeLLM2'],
+                mode='lines',
+                name='Forecasted Prices',
+                line=dict(color='orange', dash='dot')
+            ))
+
+            # Customize layout
+            fig.update_layout(
+                title=f"{crypto_name} Price Forecasting",
+                xaxis_title="Date",
+                yaxis_title="Price (USD)",
+                legend_title="Legend",
+                template="plotly_white"
+            )
+
+            # Display Plotly graph
+            st.plotly_chart(fig, use_container_width=True)
+
+            # Display forecast data
+            st.subheader("Forecast Data")
+            st.write(forecasts)
+
