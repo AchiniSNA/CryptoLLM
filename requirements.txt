@@ -5,3 +5,6 @@ yfinance
 plotly
 neuralforecast  
 torch
+transformers
+tokenizers
+sentencepiece
