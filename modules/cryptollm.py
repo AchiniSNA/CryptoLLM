@@ -219,7 +219,7 @@ class CRYPTOLLM(BaseWindows):
         return dec_out
 
     def __repr__(self):
-        return 'TimeLLM2'
+        return 'CRYPTOLLM'
 
     def calcute_lags(self, x_enc):
         q_fft = torch.fft.rfft(x_enc.permute(0, 2, 1).contiguous(), dim=-1)
