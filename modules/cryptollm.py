@@ -53,6 +53,7 @@ class CRYPTOLLM(BaseWindows):
                  optimizer_kwargs = None,
                  lr_scheduler = None,
                  lr_scheduler_kwargs = None,
+                 step_callback = None,
                  **trainer_kwargs):
         
         config_manager = ConfigManager()
@@ -183,7 +184,7 @@ class CRYPTOLLM(BaseWindows):
         self.windows_batch_size = windows_batch_size # overwrite with config value if loaded from config
         self.early_stop_patience_steps = early_stop_patience_steps # overwrite with config value if loaded from config
         self.val_check_steps = val_check_steps # overwrite with config value if loaded from config
-
+        self.step_callback = step_callback
 
     def configure_trainer(self):
         """Configure PyTorch Lightning trainer with proper settings"""
@@ -304,6 +305,23 @@ class CRYPTOLLM(BaseWindows):
         #print('y_pred',y_pred)
         return y_pred
 
+    def training_step(self, batch, batch_idx):
+        """Training step for PyTorch Lightning."""
+        loss = super().training_step(batch, batch_idx)
+        
+        if self.step_callback:
+            self.step_callback(self.current_epoch, loss.item())
+            
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        """Validation step for PyTorch Lightning."""
+        loss = super().validation_step(batch, batch_idx)
+        
+        if self.step_callback:
+            self.step_callback(self.current_epoch, None, loss.item())
+            
+        return loss
 
     def configure_trainer(self):
         """Configure PyTorch Lightning trainer with proper settings"""

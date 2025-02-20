@@ -41,6 +41,9 @@ config_manager = ConfigManager()
 model_config = config_manager.get_model_config()
 prompt_prefix = f"The dataset contains daily prices for {crypto_name}. Seasonal and yearly trends may be present."
 
+# Create placeholder for training progress
+training_progress = st.empty()
+
 # Forecast Button
 if st.sidebar.button("Start Forecasting"):
     with st.spinner("Fetching data and training the model..."):
@@ -54,13 +57,17 @@ if st.sidebar.button("Start Forecasting"):
             st.subheader(f"Historical Data for {crypto_name}")
             st.write(Y_train_df.head())
 
-            # Train model
-            nf = train_model(Y_train_df, Y_test_df, forecast_horizon, input_size, prompt_prefix, model_config)
+            # Train model with progress display
+            training_progress.text("Starting model training...")
+            nf = train_model(Y_train_df, Y_test_df, forecast_horizon, input_size, prompt_prefix, model_config, 
+                           progress_callback=lambda msg: training_progress.text(f"Training Progress: {msg}"))
 
             # Generate forecasts
+            training_progress.text("Generating forecasts...")
             forecasts = generate_forecasts(nf, Y_test_df)
 
             st.success("Forecasting completed!")
+            training_progress.empty()  # Clear the progress display
 
             # Plot results
             plot_forecasts(Y_train_df, Y_test_df, forecasts, crypto_name)
