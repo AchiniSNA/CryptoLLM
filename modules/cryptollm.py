@@ -22,8 +22,7 @@ class CRYPTOLLM(BaseWindows):
                  h,
                  input_size,
                  llm = None,
-                 llm_config = None,
-                 llm_tokenizer = None,
+   
                  llm_num_hidden_layers = 32,
                  llm_output_attention: bool = True,
                  llm_output_hidden_states: bool = True,
@@ -51,15 +50,21 @@ class CRYPTOLLM(BaseWindows):
                  lr_scheduler_kwargs = None,
                  step_callback = None,
                  **trainer_kwargs):
-        
         config_manager = ConfigManager()
         model_config = config_manager.get_model_config()
+        llm_params_config = config_manager.get_llm_params_config()
+        llm_params = llm_params_config.get('models', {})
+        
+        DEFAULT_MODEL = "openai-community/gpt2"
+        if llm is None:
+            llm = DEFAULT_MODEL 
+
+        d_llm = llm_params[llm]['hidden_dimension']
 
         patch_len = model_config.get('patch_len', 16)
         stride = model_config.get('stride', 8)
         d_ff = model_config.get('d_ff', 128)
         top_k = model_config.get('top_k', 5)
-        d_llm = model_config.get('d_llm', 768)
         d_model = model_config.get('d_model', 32)
         n_heads = model_config.get('n_heads', 8)
         enc_in = model_config.get('enc_in', 7)
@@ -112,15 +117,10 @@ class CRYPTOLLM(BaseWindows):
 
         self.hist_exog_list = [] # Initialize internally
         
-        DEFAULT_MODEL = "openai-community/gpt2"
-        llm = DEFAULT_MODEL #"Qwen/Qwen2.5-0.5B-Instruct"
-        d_llm = 768 #896
-        # llm = None
-        # d_llm = 768
-        # Architecture
+    
         print("Initializing model architecture...")
-        self.patch_len = patch_len
-        self.stride = stride
+        self.patch_len = patch_len 
+        self.stride = stride 
         self.d_ff = d_ff
         self.top_k = top_k
         self.d_llm = d_llm
@@ -129,35 +129,16 @@ class CRYPTOLLM(BaseWindows):
         self.n_heads = n_heads
         self.enc_in = enc_in
         self.dec_in = dec_in
-
-        self.llm_config = None
         self.llm = llm
-        self.llm_tokenizer = None
 
-        
  
-        if llm is None:
-
-            model_name = DEFAULT_MODEL
-        else:
-            model_name = llm
-
-        if llm_config is not None or llm_tokenizer is not None:
-            warnings.warn(
-                "'llm_config' and 'llm_tokenizer' parameters are deprecated and will be ignored. "
-                "The config and tokenizer will be automatically loaded from the specified model.",
-                DeprecationWarning,
-            )
-
         try:
-            print(model_name)
-            self.llm_config = AutoConfig.from_pretrained(model_name)
-            self.llm = AutoModel.from_pretrained(model_name, config=self.llm_config)
-            self.llm_tokenizer = AutoTokenizer.from_pretrained(model_name)
-            print(f"Successfully loaded model: {model_name}")
+            self.llm_config = AutoConfig.from_pretrained(self.llm)
+            self.llm = AutoModel.from_pretrained(self.llm, config=self.llm_config)
+            self.llm_tokenizer = AutoTokenizer.from_pretrained(self.llm)
         except EnvironmentError:
             print(
-                f"Failed to load {model_name}. Loading the default model ({DEFAULT_MODEL})..."
+                f"Failed to load {self.llm}. Loading the default model ({DEFAULT_MODEL})..."
             )
             self.llm_config = AutoConfig.from_pretrained(DEFAULT_MODEL)
             self.llm = AutoModel.from_pretrained(DEFAULT_MODEL, config=self.llm_config)

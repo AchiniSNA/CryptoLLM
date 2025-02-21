@@ -1,7 +1,7 @@
 from neuralforecast import NeuralForecast
 from modules.cryptollm import CRYPTOLLM
 
-def train_model(Y_train_df, Y_test_df, forecast_horizon, input_size, prompt_prefix, config, progress_callback=None):
+def train_model(Y_train_df, Y_test_df, forecast_horizon, input_size, prompt_prefix, config, llm=None, progress_callback=None):
     """Trains the CRYPTOLLM model using NeuralForecast.
 
     Args:
@@ -11,6 +11,7 @@ def train_model(Y_train_df, Y_test_df, forecast_horizon, input_size, prompt_pref
         input_size: Input size.
         prompt_prefix: Prompt prefix for the LLM.
         config: Model configuration dictionary.
+        llm: The LLM model to use.
         progress_callback: Optional callback function to report training progress.
 
     Returns:
@@ -31,6 +32,7 @@ def train_model(Y_train_df, Y_test_df, forecast_horizon, input_size, prompt_pref
         h=forecast_horizon,
         input_size=input_size,
         prompt_prefix=prompt_prefix,
+        llm=llm,
         max_steps=config.get('max_steps', 30),
         early_stop_patience_steps=config.get('early_stop_patience_steps', 10),
         learning_rate=config.get('learning_rate', 1e-4),

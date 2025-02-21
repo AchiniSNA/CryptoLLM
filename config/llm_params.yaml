@@ -1,0 +1,5 @@
+models:
+  openai-community/gpt2:
+    hidden_dimension: 768
+  HuggingFaceTB/SmolLM2-360M-Instruct:
+    hidden_dimension: 960

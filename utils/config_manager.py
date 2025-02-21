@@ -32,3 +32,6 @@ class ConfigManager:
 
     def get_logging_config(self):
         return self.get_config('logging_config.yaml')
+
+    def get_llm_params_config(self):
+        return self.get_config('llm_params.yaml')

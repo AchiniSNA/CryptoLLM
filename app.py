@@ -18,6 +18,11 @@ This app uses a Large Language Model (TimeLLM2) to forecast daily cryptocurrency
 # Sidebar Inputs
 st.sidebar.header("Configuration")
 
+# Load configuration
+config_manager = ConfigManager()
+llm_params_config = config_manager.get_llm_params_config()
+llm_params = llm_params_config.get('models', {})
+
 # Cryptocurrency Selection
 crypto_list = {
     'Bitcoin (BTC)': 'BTC-USD',
@@ -30,14 +35,20 @@ crypto_list = {
 crypto_name = st.sidebar.selectbox("Select Cryptocurrency", list(crypto_list.keys()))
 crypto_symbol = crypto_list[crypto_name]
 
+# Model Selection
+# The keys are displayed in the selectbox, and the value is returned.
+# We use name:name to make both key and value the model name.
+llm_list = list(llm_params.keys())
+
+llm_name = st.sidebar.selectbox("Select Model", llm_list)
+
 # Input fields for data selection
 start_date = st.sidebar.date_input("Start Date", dt.date(2024, 1, 1))
 end_date = st.sidebar.date_input("End Date", dt.date(2024, 10, 26))
 forecast_horizon = st.sidebar.slider("Forecast Horizon (days)", 7, 60, 30)
 input_size = st.sidebar.slider("Input Size (days)", 30, 120, 50)
 
-# Load configuration
-config_manager = ConfigManager()
+
 model_config = config_manager.get_model_config()
 prompt_prefix = f"The dataset contains daily prices for {crypto_name}. Seasonal and yearly trends may be present."
 
@@ -59,8 +70,8 @@ if st.sidebar.button("Start Forecasting"):
 
             # Train model with progress display
             training_progress.text("Starting model training...")
-            nf = train_model(Y_train_df, Y_test_df, forecast_horizon, input_size, prompt_prefix, model_config, 
-                           progress_callback=lambda msg: training_progress.text(f"Training Progress: {msg}"))
+            nf = train_model(Y_train_df, Y_test_df, forecast_horizon, input_size, prompt_prefix, model_config,
+                           llm=llm_name, progress_callback=lambda msg: training_progress.text(f"Training Progress: {msg}"))
 
             # Generate forecasts
             training_progress.text("Generating forecasts...")
