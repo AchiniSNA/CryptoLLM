@@ -131,18 +131,18 @@ class CRYPTOLLM(BaseWindows):
         self.dec_in = dec_in
         self.llm = llm
 
+        model_name = self.llm
  
         try:
-            self.llm_config = AutoConfig.from_pretrained(self.llm)
-            self.llm = AutoModel.from_pretrained(self.llm, config=self.llm_config)
-            self.llm_tokenizer = AutoTokenizer.from_pretrained(self.llm)
-        except EnvironmentError:
+            self.llm_config = AutoConfig.from_pretrained(model_name)
+            self.llm = AutoModel.from_pretrained(model_name, config=self.llm_config)
+            self.llm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        except EnvironmentError as e:
             print(
-                f"Failed to load {self.llm}. Loading the default model ({DEFAULT_MODEL})..."
+                f"Failed to load {model_name}. Loading the default model ({DEFAULT_MODEL})..."
             )
-            self.llm_config = AutoConfig.from_pretrained(DEFAULT_MODEL)
-            self.llm = AutoModel.from_pretrained(DEFAULT_MODEL, config=self.llm_config)
-            self.llm_tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL)
+            # raise error saying model failed to load
+            raise RuntimeError(f"Failed to load {model_name} \n error: {e} ")
 
         self.llm_num_hidden_layers = llm_num_hidden_layers
         self.llm_output_attention = llm_output_attention
