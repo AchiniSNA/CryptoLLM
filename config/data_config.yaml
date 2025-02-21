@@ -1,0 +1,17 @@
+# Default cryptocurrency list
+crypto_list:
+  Bitcoin (BTC): 'BTC-USD'
+  Ethereum (ETH): 'ETH-USD'
+  Binance Coin (BNB): 'BNB-USD'
+  Cardano (ADA): 'ADA-USD'
+  Solana (SOL): 'SOL-USD'
+
+# Default start and end dates
+start_date: '2024-01-01'
+end_date: '2024-10-26'
+
+# Data source
+data_source: 'yfinance'
+
+# Data interval
+data_interval: '1d'
