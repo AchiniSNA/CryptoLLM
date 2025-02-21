@@ -4,12 +4,8 @@ import torch
 import torch.nn as nn
 from neuralforecast.common._base_windows import BaseWindows
 from neuralforecast.losses.pytorch import MAE
-try:
-    from transformers import AutoModel, AutoTokenizer, AutoConfig
-    IS_TRANSFORMERS_INSTALLED = True
-except ImportError:
-    IS_TRANSFORMERS_INSTALLED = False
-from transformers import GPT2Config, GPT2Model, GPT2Tokenizer
+from transformers import AutoModel, AutoTokenizer, AutoConfig
+
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
 
@@ -116,6 +112,11 @@ class CRYPTOLLM(BaseWindows):
 
         self.hist_exog_list = [] # Initialize internally
         
+        DEFAULT_MODEL = "openai-community/gpt2"
+        llm = DEFAULT_MODEL #"Qwen/Qwen2.5-0.5B-Instruct"
+        d_llm = 768 #896
+        # llm = None
+        # d_llm = 768
         # Architecture
         print("Initializing model architecture...")
         self.patch_len = patch_len
@@ -129,22 +130,38 @@ class CRYPTOLLM(BaseWindows):
         self.enc_in = enc_in
         self.dec_in = dec_in
 
-        self.llm_config = llm_config
+        self.llm_config = None
         self.llm = llm
-        self.llm_tokenizer = llm_tokenizer
+        self.llm_tokenizer = None
 
-        print(f"self.llm before loading: {self.llm}")
-        if self.llm is None:
-            print("No LLM provided, loading default GPT2...")
-            if not IS_TRANSFORMERS_INSTALLED:
-                raise ImportError("Please install `transformers` to use the default LLM")
+        
+ 
+        if llm is None:
 
-            #print("Using GPT2 model as default and ignoring `llm_config` and `llm_tokenizer`")
+            model_name = DEFAULT_MODEL
+        else:
+            model_name = llm
 
-            self.llm_confg = GPT2Config.from_pretrained('openai-community/gpt2')
-            self.llm = GPT2Model.from_pretrained('openai-community/gpt2', config=self.llm_confg)
-            self.llm_tokenizer = GPT2Tokenizer.from_pretrained('openai-community/gpt2')
-            print("Default GPT2 loaded successfully")
+        if llm_config is not None or llm_tokenizer is not None:
+            warnings.warn(
+                "'llm_config' and 'llm_tokenizer' parameters are deprecated and will be ignored. "
+                "The config and tokenizer will be automatically loaded from the specified model.",
+                DeprecationWarning,
+            )
+
+        try:
+            print(model_name)
+            self.llm_config = AutoConfig.from_pretrained(model_name)
+            self.llm = AutoModel.from_pretrained(model_name, config=self.llm_config)
+            self.llm_tokenizer = AutoTokenizer.from_pretrained(model_name)
+            print(f"Successfully loaded model: {model_name}")
+        except EnvironmentError:
+            print(
+                f"Failed to load {model_name}. Loading the default model ({DEFAULT_MODEL})..."
+            )
+            self.llm_config = AutoConfig.from_pretrained(DEFAULT_MODEL)
+            self.llm = AutoModel.from_pretrained(DEFAULT_MODEL, config=self.llm_config)
+            self.llm_tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL)
 
         self.llm_num_hidden_layers = llm_num_hidden_layers
         self.llm_output_attention = llm_output_attention

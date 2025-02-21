@@ -24,7 +24,7 @@ def load_and_preprocess_data(crypto_symbol: str, start_date: dt.date, end_date: 
     data['ds'] = pd.to_datetime(data['ds'])
     data['unique_id'] = crypto_symbol
 
-    train_size = int(len(data) * 0.8)
+    train_size = int(len(data) * 0.9)
     Y_train_df = data[:train_size]
     Y_test_df = data[train_size:].reset_index(drop=True)
 
