@@ -5,6 +5,7 @@ yfinance
 plotly
 neuralforecast  
 torch
-transformers
+transformers>=4.37.0
 tokenizers
 sentencepiece
+streamlit
