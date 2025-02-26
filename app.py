@@ -2,7 +2,7 @@ import streamlit as st
 import datetime as dt
 from modules.data import load_and_preprocess_data
 from modules.trainer import train_model
-from modules.forecasting import generate_forecasts
+from modules.forecasting import generate_forecasts, calculate_forecast_errors
 from modules.visualization import plot_forecasts
 from utils.config_manager import ConfigManager
 
@@ -76,9 +76,13 @@ if st.sidebar.button("Start Forecasting"):
             # Generate forecasts
             training_progress.text("Generating forecasts...")
             forecasts = generate_forecasts(nf, Y_test_df)
+            
+            # Calculate forecast errors
+            training_progress.text("Calculating forecast errors...")
+            error_df, mape, direction_accuracy = calculate_forecast_errors(Y_test_df, forecasts)
 
             st.success("Forecasting completed!")
             training_progress.empty()  # Clear the progress display
 
-            # Plot results
-            plot_forecasts(Y_train_df, Y_test_df, forecasts, crypto_name)
+            # Plot results with error metrics
+            plot_forecasts(Y_train_df, Y_test_df, forecasts, crypto_name, error_df, mape, direction_accuracy)
