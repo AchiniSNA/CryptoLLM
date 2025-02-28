@@ -16,5 +16,4 @@ class FlattenHead2(nn.Module):
         x = self.flatten(x)
         x = self.linear(x)
         x = self.dropout(x)
-        print('Flatten X')
         return x

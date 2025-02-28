@@ -33,5 +33,4 @@ class ReprogrammingLayer2(nn.Module):
         scores = torch.einsum("blhe,she->bhls", target_embedding, source_embedding)
         A = self.dropout(torch.softmax(scale * scores, dim=-1))
         reprogramming_embedding = torch.einsum("bhls,she->blhe", A, value_embedding)
-        print('Reprogramming embedding')
         return reprogramming_embedding

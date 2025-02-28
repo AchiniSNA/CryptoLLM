@@ -18,7 +18,6 @@ class TokenEmbedding2(nn.Module):
 
     def forward(self, x):
         x = self.tokenConv(x.permute(0, 2, 1)).transpose(1, 2)
-        print('TokenEmbedding X')
         return x
 
 
