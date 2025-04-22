@@ -11,7 +11,7 @@ This project explores the use of **Large Language Models (LLMs)** for **univaria
 
 ---
 
-## Requirements
+## 🛠️ Requirements
 
 - numpy>=1.26.0
 - pandas>=2.2.0
