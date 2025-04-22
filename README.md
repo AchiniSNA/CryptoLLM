@@ -8,3 +8,23 @@ This project explores the use of **Large Language Models (LLMs)** for **univaria
 - Predict future cryptocurrency prices.
 - Explore the capability of LLMs in time series forecasting tasks.
 - Utilize the multimodal embedding capabilities for temporal data.
+
+---
+
+## Requirements
+
+- numpy>=1.26.0
+- pandas>=2.2.0
+- matplotlib>=3.8.0
+- yfinance
+- plotly
+- neuralforecast
+- torch>=2.2.0
+- transformers>=4.37.0
+- tokenizers
+- sentencepiece
+- streamlit
+
+To install dependencies:
+```bash
+pip install -r requirements.txt
