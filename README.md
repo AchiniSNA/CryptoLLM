@@ -25,6 +25,18 @@ This project explores the use of **Large Language Models (LLMs)** for **univaria
 - sentencepiece
 - streamlit
 
-To install dependencies:
+---
+
+## ⚙️ How to Run
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/AchiniSNA/CrptoLLM.git
+  
+2. **To install dependencies:**
 ```bash
 pip install -r requirements.txt
+```
+3. **Run the code**
+   ```bash
+   streamlit run app.py
